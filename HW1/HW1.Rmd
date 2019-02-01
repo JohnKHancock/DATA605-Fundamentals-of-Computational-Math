@@ -1,0 +1,177 @@
+---
+title: "DATA605 - HW1"
+author: "John K. Hancock"
+date: "January 26, 2019"
+output:
+ html_document:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Problem Set One
+
+###Answer
+
+```{r, include=FALSE}
+library(pracma)
+u <- c(.5,.5)
+v  <- c(3,-4)
+
+```
+
+
+(1) Calculate the dot product u:v where
+
+$$\vec{u} =\begin{bmatrix}0.5 \\ 0.5 \end{bmatrix}$$
+$$\vec{v} =\begin{bmatrix}3 \\ 4 \end{bmatrix}$$
+(1) Dot Product 
+```{r, Dot_Product}
+w <- (u[1]*v[1]) + (u[2]*v[2])
+w
+```
+
+
+(2) Lengths
+
+```{r}
+length_of_vector_u <-sqrt(sum(u^2))
+length_of_vector_u
+```
+
+```{r}
+length_of_vector_v <-sqrt(sum(v^2))
+length_of_vector_v
+```
+
+(3) Linear Combination
+
+```{r}
+linear_combo <- (3*u) - (2*v)
+linear_combo 
+```
+
+(4) Angle between u and v is the inverse cosine (or arc cosine) of the dot production of the two vectors divided by the product of their magnitude.
+
+```{r}
+angle <- acos(w/(length_of_vector_u*length_of_vector_v))
+angle
+```
+
+##Problem Set Two
+
+Set up a system of equations with 3 variables and 3 constraints and solve for x. Please write a function in R that will take two variables (matrix A & constraint vector b) and solve using elimination. Your function should produce the right answer for the system of equations for any 3-variable, 3-equation system....The approach that you should employ is to construct an Upper Triangular Matrix and then back-substitute to get the solution. Alternatively, you can augment the matrix A with vector b and jointly apply the Gauss Jordan elimination procedure.
+
+
+###Answer
+
+The function below solves a system of three equations by augmenting matrix A with vector b and jointly applying the Gauss Jordan elimination procedure.  The function should return a tuple which provides a solution that can solve all three equations simulataneously.
+
+There are four rules that this function has to follow:
+
+(1) An equation is swapped with another
+(2) An equation has both sides multiplied by a nonzero constant
+(3) An equation is replaced by the sum of itself and a multiple of another
+(4) Multiplying a row by 0 is not allowed. 
+
+In the code below, I print out the updated matrix after each application of the rules above to ensure that everything is working correctly.
+
+
+```{r}
+solve_three_by_three_equations <- function(m, v){
+    #These next two lines augment the matrix with the vector and removes the column names
+    aug_matrix <- cbind(m,v)
+    colnames(aug_matrix) <- NULL
+    print('Below is the original augmented matrix:')
+    print(aug_matrix)
+    cat("\n\n")
+    
+    #Initialize the row and col variables to "1".
+    col <- 1
+    row <- 1
+    
+    #Check if the first coefficient in the first row, first column equals 1. If yes, proceed with the other rules.
+    if (aug_matrix[row,col] == 1){
+        
+        #Apply Rules (2) and (3) multiply both sides of an equation by a nonzero constant and replaced by the sum of itself and a multiple of another
+        if (aug_matrix[row+1,col] != 0){
+            aug_matrix[row+1,] <- (-aug_matrix[row+1,col] * aug_matrix[row,]) + aug_matrix[row+1,]
+            #print the updated augmented matrix
+            print('The first step applied to the augmented matrix:')
+            print(aug_matrix)
+            cat("\n\n")
+        }
+        
+        #Apply Rules (2) and (3) multiply both sides of an equation by a nonzero constant and replaced by the sum of itself and a multiple of another
+        if (aug_matrix[row+2,col] !=0){
+            aug_matrix[row+2,] <-  (-aug_matrix[row+2,col] * aug_matrix[row,]) + aug_matrix[row+2,]
+            #print the updated augmented matrix
+            print('The first column is now complete:')
+            print(aug_matrix)
+            cat("\n\n")
+        }
+        
+        #Apply Rule (2) An equation has both sides multiplied by a nonzero constant in order to get a "1" in the second row, second column
+        if (aug_matrix[row+1,col+1]!=0){
+            aug_matrix[row+1,] <- (1/aug_matrix[row+1,col+1]) * aug_matrix[row+1,]
+            #print the updated augmented matrix
+            print('The second row and column is now complete:')
+            print(aug_matrix)
+            cat("\n\n")
+        }
+        
+        #Apply Rules (2) and (3) multiply both sides of an equation by a nonzero constant and replaced by the sum of itself and a multiple of another
+        if (aug_matrix[row+2,col+1] != 0){
+            aug_matrix[row+2,] <- (-aug_matrix[row+2,col+1] * aug_matrix[row+1,]) + aug_matrix[row+2,]
+            #print the updated augmented matrix
+            print('The third row now has a 0 in its second column:')
+            print(aug_matrix)
+            cat("\n\n")
+        }
+        
+        #For the final step, apply Rule (2) An equation has both sides multiplied by a nonzero constant in order to get a "1" in the third row, third column
+        if (aug_matrix[row+2,col+2] !=0){
+            aug_matrix[row+2,] <- (1/aug_matrix[row+2,col+2]) * aug_matrix[row+2,]
+            #print the final Gauss matrix
+            print('The final matrix:')
+            print(aug_matrix)
+            cat("\n\n")
+        }
+    }
+    
+    #Use backward population to find the values of x1, x2, and x3. 
+    x3 <- aug_matrix[row+2,col+3]
+    x2 <- aug_matrix[row+1,col+3] - (aug_matrix[row+1,col+2]* aug_matrix[row+2,col+3])
+    x1 <- aug_matrix[row,col+3] - (aug_matrix[row+1,col+3] - (aug_matrix[row+1,col+2]* aug_matrix[row+2,col+3])) - (3*aug_matrix[row+2,col+3])
+   
+    #Create a solution vector and populate it
+    solution <- c()
+    solution[1] <- round(x1,2)
+    solution[2] <- round(x2,2)
+    solution[3] <- round(x3,2)
+    
+    #return the solution vector
+    print("The final solution vector")
+    print(x3)
+    return (solution)
+    }
+```
+
+```{r}
+m <-matrix(c(1,2,-1,1,-1,-2,3,5,4), ncol=3, nrow=3)
+v <- c(1,2,6)
+solution <- solve_three_by_three_equations(m,v)
+solution
+
+
+```
+
+##Reflections
+
+Problem set one was straightforward, by the book.  For problem Set two, I struggled a bit to understand the rules which I now understand.  The function that I created, solve_three_by_three_equations, works on this particular matrix.  I would have to add more code to get it work on different matrices. For example, I would have to add "else" statements for when a coefficient equals 0. 
